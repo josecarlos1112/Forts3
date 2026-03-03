@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>FORTS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{
+  background:#000;
+  color:#00ffcc;
+  font-family:Arial;
+  text-align:center;
+}
+input,button{
+  padding:10px;
+  margin:5px;
+  border:none;
+  border-radius:8px;
+}
+button{
+  background:#00ffcc;
+  font-weight:bold;
+}
+#chat{
+  height:200px;
+  overflow:auto;
+  background:#111;
+  margin:10px;
+  padding:10px;
+}
+</style>
+</head>
+<body>
+
+<h1>⚡ FORTS ⚡</h1>
+
+<div id="login">
+  <input id="username" placeholder="Usuário">
+  <button onclick="register()">Entrar</button>
+</div>
+
+<div id="app" style="display:none">
+  <h3 id="user"></h3>
+  <input id="friend" placeholder="Adicionar amigo">
+  <button onclick="addFriend()">Adicionar</button>
+
+  <h3>Chat</h3>
+  <input id="to" placeholder="Enviar para">
+  <div id="chat"></div>
+  <input id="msg" placeholder="Mensagem">
+  <button onclick="send()">Enviar</button>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+let socket = io();
+let currentUser = "";
+
+function register(){
+  currentUser = document.getElementById("username").value;
+
+  fetch("/register", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json"},
+    body:JSON.stringify({username:currentUser})
+  });
+
+  socket.emit("join", currentUser);
+
+  document.getElementById("login").style.display="none";
+  document.getElementById("app").style.display="block";
+  document.getElementById("user").innerText="Logado como: "+currentUser;
+}
+
+function addFriend(){
+  fetch("/add-friend", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json"},
+    body:JSON.stringify({
+      user:currentUser,
+      friend:document.getElementById("friend").value
+    })
+  });
+}
+
+function send(){
+  socket.emit("message", {
+    to: document.getElementById("to").value,
+    msg: document.getElementById("msg").value
+  });
+}
+
+socket.on("message", data=>{
+  if(data.to === currentUser){
+    document.getElementById("chat").innerHTML += 
+      "<div><b>"+data.from+":</b> "+data.msg+"</div>";
+  }
+});
+</script>
+
+</body>
+</html>
